@@ -1,7 +1,6 @@
-from typing import Dict, List
-
 from task_list.console import Console
-from task_list.task import Task
+
+from .entity import Task, TodoList
 
 
 class TaskList:
@@ -10,7 +9,7 @@ class TaskList:
     def __init__(self, console: Console) -> None:
         self.console = console
         self.last_id: int = 0
-        self.tasks: Dict[str, List[Task]] = dict()
+        self.todo_list: TodoList = TodoList()
 
     def run(self) -> None:
         while True:
@@ -36,10 +35,12 @@ class TaskList:
             self.error(command)
 
     def show(self) -> None:
-        for project, tasks in self.tasks.items():
-            self.console.print(project)
-            for task in tasks:
-                self.console.print(f"  [{'x' if task.is_done() else ' '}] {task.id}: {task.description}")
+        for project in self.todo_list.get_all_project():
+            self.console.print(project.get_name())
+            for task in project.get_tasks():
+                self.console.print(
+                    f"  [{'x' if task.is_done() else ' '}] {task.id}: {task.description}"
+                )
             self.console.print()
 
     def add(self, command_line: str) -> None:
@@ -52,10 +53,10 @@ class TaskList:
             self.add_task(project_task[0], project_task[1])
 
     def add_project(self, name: str) -> None:
-        self.tasks[name] = []
+        self.todo_list.add_project(name, [])
 
     def add_task(self, project: str, description: str) -> None:
-        project_tasks = self.tasks.get(project)
+        project_tasks = self.todo_list.get_task(project)
         if project_tasks is None:
             self.console.print(f"Could not find a project with the name {project}.")
             self.console.print()
@@ -70,8 +71,8 @@ class TaskList:
 
     def set_done(self, id_string: str, done: bool) -> None:
         id_ = int(id_string)
-        for project, tasks in self.tasks.items():
-            for task in tasks:
+        for project in self.todo_list.get_all_project():
+            for task in project.get_tasks():
                 if task.id == id_:
                     task.set_done(done)
                     return
@@ -94,4 +95,3 @@ class TaskList:
     def next_id(self) -> int:
         self.last_id += 1
         return self.last_id
-
